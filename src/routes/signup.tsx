@@ -186,40 +186,45 @@ function SignupPage() {
       {step >= 1 && step <= 4 && (
         <>
           <StepIndicator step={step} onJump={(s) => s < step && setStep(s as Step)} />
-          <main className="flex-1 w-full max-w-xl mx-auto px-4 pb-32 pt-2">
-            {step === 1 && (
-              <StepPlan
-                value={form.plan}
-                onChange={(p) => update("plan", p)}
-                onNext={() => setStep(2)}
-              />
-            )}
-            {step === 2 && (
-              <StepAddress
-                form={form}
-                update={update}
-                onBack={() => setStep(1)}
-                onNext={() => setStep(3)}
-              />
-            )}
-            {step === 3 && (
-              <StepCustomer
-                form={form}
-                update={update}
-                onBack={() => setStep(2)}
-                onNext={() => setStep(4)}
-              />
-            )}
-            {step === 4 && (
-              <StepInstall
-                form={form}
-                update={update}
-                onBack={() => setStep(3)}
-                onSubmit={submit}
-                submitting={submitting}
-                error={submitError}
-              />
-            )}
+          <main className="flex-1 w-full max-w-6xl mx-auto px-4 lg:px-8 pb-32 lg:pb-12 pt-2">
+            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10 lg:items-start">
+              <div className="w-full max-w-xl mx-auto lg:mx-0">
+                {step === 1 && (
+                  <StepPlan
+                    value={form.plan}
+                    onChange={(p) => update("plan", p)}
+                    onNext={() => setStep(2)}
+                  />
+                )}
+                {step === 2 && (
+                  <StepAddress
+                    form={form}
+                    update={update}
+                    onBack={() => setStep(1)}
+                    onNext={() => setStep(3)}
+                  />
+                )}
+                {step === 3 && (
+                  <StepCustomer
+                    form={form}
+                    update={update}
+                    onBack={() => setStep(2)}
+                    onNext={() => setStep(4)}
+                  />
+                )}
+                {step === 4 && (
+                  <StepInstall
+                    form={form}
+                    update={update}
+                    onBack={() => setStep(3)}
+                    onSubmit={submit}
+                    submitting={submitting}
+                    error={submitError}
+                  />
+                )}
+              </div>
+              <DesktopSummary step={step} form={form} />
+            </div>
           </main>
         </>
       )}
@@ -231,25 +236,116 @@ function SignupPage() {
   );
 }
 
+function DesktopSummary({ step, form }: { step: number; form: FormState }) {
+  const plan = PLANS.find((p) => p.id === form.plan);
+  return (
+    <aside className="hidden lg:block sticky top-32 mt-4">
+      <div className="rounded-3xl border-2 border-border bg-card overflow-hidden shadow-sm">
+        <div className="bg-magenta text-white px-6 py-5">
+          <div className="text-[11px] font-bold uppercase tracking-widest opacity-90">
+            Your install request
+          </div>
+          <div className="mt-1 text-lg font-extrabold">
+            {plan ? plan.name : "Choose a plan to begin"}
+          </div>
+          {plan && (
+            <div className="mt-1 text-sm text-white/90">
+              {plan.price}/mo · {plan.speed}
+            </div>
+          )}
+        </div>
+        <div className="p-6 space-y-4 text-sm">
+          <SummaryRow label="Plan" value={plan?.name ?? "—"} active={step >= 1} />
+          <SummaryRow
+            label="Address"
+            value={form.fullAddress || "—"}
+            active={step >= 2 && !!form.fullAddress}
+            truncate
+          />
+          <SummaryRow
+            label="Contact"
+            value={form.fullName || "—"}
+            active={step >= 3 && !!form.fullName}
+          />
+          <SummaryRow
+            label="Install"
+            value={
+              form.installDate && form.installTime
+                ? `${form.installDate} · ${form.installTime}`
+                : "—"
+            }
+            active={step >= 4 && !!form.installDate}
+          />
+        </div>
+        <div className="border-t bg-secondary/50 px-6 py-4 space-y-2">
+          {[
+            "Free professional installation",
+            "No payment collected today",
+            "Cancel anytime before install",
+          ].map((t) => (
+            <div key={t} className="flex items-start gap-2 text-xs text-foreground/80">
+              <CheckIcon className="h-4 w-4 text-magenta shrink-0 mt-0.5" />
+              <span>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  active,
+  truncate,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+  truncate?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+        {label}
+      </span>
+      <span
+        className={`text-right text-sm font-semibold ${
+          active ? "text-foreground" : "text-muted-foreground"
+        } ${truncate ? "truncate max-w-[200px]" : ""}`}
+        title={value}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 // ---------------- Layout pieces ----------------
 
 function Header() {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-      <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
         <img
           src={logoAsset.url}
           alt="T-Mobile Fiber"
-          className="h-8 w-auto"
+          className="h-8 lg:h-10 w-auto"
           width={140}
           height={40}
         />
-        <a
-          href="sms:8886438620?&body=FIBER"
-          className="text-xs font-semibold text-magenta hover:underline"
-        >
-          Text FIBER
-        </a>
+        <div className="flex items-center gap-4">
+          <span className="hidden md:inline text-sm text-muted-foreground">
+            Need help?
+          </span>
+          <a
+            href="sms:8886438620?&body=FIBER"
+            className="text-xs lg:text-sm font-semibold text-magenta hover:underline"
+          >
+            Text FIBER to 888-643-8620
+          </a>
+        </div>
       </div>
     </header>
   );
@@ -258,7 +354,7 @@ function Header() {
 function Footer() {
   return (
     <footer className="border-t bg-secondary/40 mt-auto">
-      <div className="max-w-xl mx-auto px-4 py-6 text-[11px] leading-relaxed text-muted-foreground">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 text-[11px] leading-relaxed text-muted-foreground">
         Pricing shown with AutoPay. AutoPay discount requires debit card or linked
         bank account. First month free applies to qualifying 1 Gig and 2 Gig
         plans. $100 back applies to qualifying 2 Gig plan. Offers subject to
@@ -272,51 +368,109 @@ function Hero({ onStart }: { onStart: () => void }) {
   return (
     <main className="flex-1">
       <section className="relative bg-magenta text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-20 pointer-events-none"
+        <div
+          className="absolute inset-0 opacity-25 pointer-events-none"
           style={{
             background:
-              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.4), transparent 50%), radial-gradient(circle at 80% 80%, rgba(0,0,0,0.3), transparent 50%)",
+              "radial-gradient(circle at 15% 20%, rgba(255,255,255,0.45), transparent 45%), radial-gradient(circle at 85% 80%, rgba(0,0,0,0.35), transparent 50%), radial-gradient(circle at 70% 10%, rgba(255,255,255,0.25), transparent 40%)",
           }}
         />
-        <div className="relative max-w-xl mx-auto px-5 pt-8 pb-10">
-          <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
-            <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-            AVAILABLE AT YOUR ADDRESS
-          </span>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-black leading-tight tracking-tight">
-            Great news! T-Mobile Fiber is available at your address.
-          </h1>
-          <p className="mt-3 text-base sm:text-lg text-white/90">
-            Choose your plan and request an install time.
-          </p>
+        <div className="relative max-w-6xl mx-auto px-5 lg:px-8 pt-8 lg:pt-20 pb-10 lg:pb-24 grid lg:grid-cols-2 lg:gap-16 items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              AVAILABLE AT YOUR ADDRESS
+            </span>
+            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight">
+              Great news! T-Mobile Fiber is available at your address.
+            </h1>
+            <p className="mt-3 lg:mt-5 text-base sm:text-lg lg:text-xl text-white/90 max-w-lg">
+              Choose your plan and request an install time. Takes about 2 minutes.
+            </p>
 
-          <ul className="mt-6 space-y-2.5">
-            {[
-              "First month free on 1 Gig & 2 Gig",
-              "2 Gig includes $100 back",
-              "Free professional installation",
-              "No payment collected today",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-3 text-[15px] font-medium">
-                <CheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
+            <ul className="mt-6 lg:mt-8 grid sm:grid-cols-2 gap-2.5 lg:gap-3 max-w-xl">
+              {[
+                "First month free on 1 Gig & 2 Gig",
+                "2 Gig includes $100 back",
+                "Free professional installation",
+                "No payment collected today",
+              ].map((t) => (
+                <li
+                  key={t}
+                  className="flex items-start gap-3 text-[15px] lg:text-base font-medium"
+                >
+                  <CheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
 
-          <button
-            onClick={onStart}
-            className="mt-7 w-full bg-white text-magenta font-bold text-base py-4 rounded-xl shadow-lg hover:shadow-xl active:scale-[0.99] transition"
-          >
-            Start Request →
-          </button>
-          <p className="mt-3 text-center text-xs text-white/80">
-            Takes about 2 minutes • No payment today
-          </p>
+            <div className="mt-7 lg:mt-10 flex flex-col sm:flex-row gap-3 sm:items-center">
+              <button
+                onClick={onStart}
+                className="w-full sm:w-auto bg-white text-magenta font-bold text-base lg:text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-0.5 active:scale-[0.99] transition"
+              >
+                Start Request →
+              </button>
+              <p className="text-xs lg:text-sm text-white/80 text-center sm:text-left">
+                Takes about 2 minutes
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> · </span>No payment today
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop preview card */}
+          <div className="hidden lg:block relative">
+            <div className="absolute -inset-6 bg-white/10 rounded-[2rem] blur-2xl" />
+            <div className="relative rounded-3xl bg-white text-ink shadow-2xl p-7 rotate-1 hover:rotate-0 transition-transform">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-magenta">
+                  Most Popular
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  AutoPay
+                </span>
+              </div>
+              <div className="mt-2 text-2xl font-black">Fiber 1 Gig</div>
+              <div className="text-sm text-muted-foreground">
+                1000 Mbps ↓ / 1000 Mbps ↑
+              </div>
+              <div className="mt-5 flex items-baseline gap-2">
+                <span className="text-5xl font-black tracking-tight">$60</span>
+                <span className="text-base font-semibold text-muted-foreground">
+                  /mo
+                </span>
+                <span className="text-sm text-muted-foreground line-through ml-1">
+                  $70
+                </span>
+              </div>
+              <div className="mt-1 text-xs font-bold text-magenta">
+                First month free
+              </div>
+              <div className="mt-5 h-px bg-border" />
+              <ul className="mt-4 space-y-2 text-sm">
+                {[
+                  "Wi-Fi router included",
+                  "Mesh extender as needed",
+                  "Unlimited data, no caps",
+                  "T-Mobile Tuesdays perks",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2">
+                    <CheckIcon className="h-4 w-4 text-magenta mt-0.5 shrink-0" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="absolute -bottom-4 -left-4 rounded-2xl bg-ink text-white px-4 py-3 shadow-xl text-sm font-semibold">
+              <span className="text-magenta">●</span> 2 Gig: $100 back
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="max-w-xl mx-auto px-5 py-8 grid grid-cols-3 gap-3 text-center">
+      <section className="max-w-6xl mx-auto px-5 lg:px-8 py-8 lg:py-14 grid grid-cols-3 gap-3 lg:gap-6 text-center">
         <Stat label="Fiber speeds" value="Up to 2 Gig" />
         <Stat label="Pro install" value="Free" />
         <Stat label="Data caps" value="None" />
@@ -327,9 +481,13 @@ function Hero({ onStart }: { onStart: () => void }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border bg-card p-3">
-      <div className="text-sm font-bold text-foreground">{value}</div>
-      <div className="text-[11px] text-muted-foreground mt-0.5">{label}</div>
+    <div className="rounded-xl lg:rounded-2xl border bg-card p-3 lg:p-6">
+      <div className="text-sm lg:text-2xl font-bold lg:font-black text-foreground">
+        {value}
+      </div>
+      <div className="text-[11px] lg:text-sm text-muted-foreground mt-0.5 lg:mt-1">
+        {label}
+      </div>
     </div>
   );
 }
@@ -343,17 +501,17 @@ function StepIndicator({
 }) {
   const labels = ["Plan", "Address", "Info", "Install"];
   return (
-    <div className="sticky top-[57px] z-30 bg-background/95 backdrop-blur border-b">
-      <div className="max-w-xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">
+    <div className="sticky top-[57px] lg:top-[65px] z-30 bg-background/95 backdrop-blur border-b">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 lg:py-4">
+        <div className="flex items-center justify-between mb-1.5 lg:mb-2">
+          <span className="text-xs lg:text-sm font-semibold text-muted-foreground">
             Step {step} of 4
           </span>
-          <span className="text-xs font-semibold text-magenta">
+          <span className="text-xs lg:text-sm font-semibold text-magenta">
             {labels[step - 1]}
           </span>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 lg:gap-2">
           {labels.map((l, i) => {
             const idx = i + 1;
             const done = idx < step;
@@ -363,7 +521,7 @@ function StepIndicator({
                 key={l}
                 onClick={() => onJump(idx)}
                 disabled={!done}
-                className={`flex-1 h-1.5 rounded-full transition-all ${
+                className={`flex-1 h-1.5 lg:h-2 rounded-full transition-all ${
                   active
                     ? "bg-magenta"
                     : done
