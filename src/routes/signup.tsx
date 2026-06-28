@@ -186,40 +186,45 @@ function SignupPage() {
       {step >= 1 && step <= 4 && (
         <>
           <StepIndicator step={step} onJump={(s) => s < step && setStep(s as Step)} />
-          <main className="flex-1 w-full max-w-xl mx-auto px-4 pb-32 pt-2">
-            {step === 1 && (
-              <StepPlan
-                value={form.plan}
-                onChange={(p) => update("plan", p)}
-                onNext={() => setStep(2)}
-              />
-            )}
-            {step === 2 && (
-              <StepAddress
-                form={form}
-                update={update}
-                onBack={() => setStep(1)}
-                onNext={() => setStep(3)}
-              />
-            )}
-            {step === 3 && (
-              <StepCustomer
-                form={form}
-                update={update}
-                onBack={() => setStep(2)}
-                onNext={() => setStep(4)}
-              />
-            )}
-            {step === 4 && (
-              <StepInstall
-                form={form}
-                update={update}
-                onBack={() => setStep(3)}
-                onSubmit={submit}
-                submitting={submitting}
-                error={submitError}
-              />
-            )}
+          <main className="flex-1 w-full max-w-6xl mx-auto px-4 lg:px-8 pb-32 lg:pb-12 pt-2">
+            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10 lg:items-start">
+              <div className="w-full max-w-xl mx-auto lg:mx-0">
+                {step === 1 && (
+                  <StepPlan
+                    value={form.plan}
+                    onChange={(p) => update("plan", p)}
+                    onNext={() => setStep(2)}
+                  />
+                )}
+                {step === 2 && (
+                  <StepAddress
+                    form={form}
+                    update={update}
+                    onBack={() => setStep(1)}
+                    onNext={() => setStep(3)}
+                  />
+                )}
+                {step === 3 && (
+                  <StepCustomer
+                    form={form}
+                    update={update}
+                    onBack={() => setStep(2)}
+                    onNext={() => setStep(4)}
+                  />
+                )}
+                {step === 4 && (
+                  <StepInstall
+                    form={form}
+                    update={update}
+                    onBack={() => setStep(3)}
+                    onSubmit={submit}
+                    submitting={submitting}
+                    error={submitError}
+                  />
+                )}
+              </div>
+              <DesktopSummary step={step} form={form} />
+            </div>
           </main>
         </>
       )}
@@ -227,6 +232,92 @@ function SignupPage() {
       {step === 5 && <Success />}
 
       <Footer />
+    </div>
+  );
+}
+
+function DesktopSummary({ step, form }: { step: number; form: FormState }) {
+  const plan = PLANS.find((p) => p.id === form.plan);
+  return (
+    <aside className="hidden lg:block sticky top-32 mt-4">
+      <div className="rounded-3xl border-2 border-border bg-card overflow-hidden shadow-sm">
+        <div className="bg-magenta text-white px-6 py-5">
+          <div className="text-[11px] font-bold uppercase tracking-widest opacity-90">
+            Your install request
+          </div>
+          <div className="mt-1 text-lg font-extrabold">
+            {plan ? plan.name : "Choose a plan to begin"}
+          </div>
+          {plan && (
+            <div className="mt-1 text-sm text-white/90">
+              {plan.price}/mo · {plan.speed}
+            </div>
+          )}
+        </div>
+        <div className="p-6 space-y-4 text-sm">
+          <SummaryRow label="Plan" value={plan?.name ?? "—"} active={step >= 1} />
+          <SummaryRow
+            label="Address"
+            value={form.fullAddress || "—"}
+            active={step >= 2 && !!form.fullAddress}
+            truncate
+          />
+          <SummaryRow
+            label="Contact"
+            value={form.fullName || "—"}
+            active={step >= 3 && !!form.fullName}
+          />
+          <SummaryRow
+            label="Install"
+            value={
+              form.installDate && form.installTime
+                ? `${form.installDate} · ${form.installTime}`
+                : "—"
+            }
+            active={step >= 4 && !!form.installDate}
+          />
+        </div>
+        <div className="border-t bg-secondary/50 px-6 py-4 space-y-2">
+          {[
+            "Free professional installation",
+            "No payment collected today",
+            "Cancel anytime before install",
+          ].map((t) => (
+            <div key={t} className="flex items-start gap-2 text-xs text-foreground/80">
+              <CheckIcon className="h-4 w-4 text-magenta shrink-0 mt-0.5" />
+              <span>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  active,
+  truncate,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+  truncate?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+        {label}
+      </span>
+      <span
+        className={`text-right text-sm font-semibold ${
+          active ? "text-foreground" : "text-muted-foreground"
+        } ${truncate ? "truncate max-w-[200px]" : ""}`}
+        title={value}
+      >
+        {value}
+      </span>
     </div>
   );
 }
