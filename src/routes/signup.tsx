@@ -327,24 +327,191 @@ function SummaryRow({
 function Header() {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-      <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
         <img
           src={logoAsset.url}
           alt="T-Mobile Fiber"
-          className="h-8 w-auto"
+          className="h-8 lg:h-10 w-auto"
           width={140}
           height={40}
         />
-        <a
-          href="sms:8886438620?&body=FIBER"
-          className="text-xs font-semibold text-magenta hover:underline"
-        >
-          Text FIBER
-        </a>
+        <div className="flex items-center gap-4">
+          <span className="hidden md:inline text-sm text-muted-foreground">
+            Need help?
+          </span>
+          <a
+            href="sms:8886438620?&body=FIBER"
+            className="text-xs lg:text-sm font-semibold text-magenta hover:underline"
+          >
+            Text FIBER to 888-643-8620
+          </a>
+        </div>
       </div>
     </header>
   );
 }
+
+function Footer() {
+  return (
+    <footer className="border-t bg-secondary/40 mt-auto">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 text-[11px] leading-relaxed text-muted-foreground">
+        Pricing shown with AutoPay. AutoPay discount requires debit card or linked
+        bank account. First month free applies to qualifying 1 Gig and 2 Gig
+        plans. $100 back applies to qualifying 2 Gig plan. Offers subject to
+        eligibility and availability. No payment is collected on this page.
+      </div>
+    </footer>
+  );
+}
+
+function Hero({ onStart }: { onStart: () => void }) {
+  return (
+    <main className="flex-1">
+      <section className="relative bg-magenta text-white overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-25 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle at 15% 20%, rgba(255,255,255,0.45), transparent 45%), radial-gradient(circle at 85% 80%, rgba(0,0,0,0.35), transparent 50%), radial-gradient(circle at 70% 10%, rgba(255,255,255,0.25), transparent 40%)",
+          }}
+        />
+        <div className="relative max-w-6xl mx-auto px-5 lg:px-8 pt-8 lg:pt-20 pb-10 lg:pb-24 grid lg:grid-cols-2 lg:gap-16 items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              AVAILABLE AT YOUR ADDRESS
+            </span>
+            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight">
+              Great news! T-Mobile Fiber is available at your address.
+            </h1>
+            <p className="mt-3 lg:mt-5 text-base sm:text-lg lg:text-xl text-white/90 max-w-lg">
+              Choose your plan and request an install time. Takes about 2 minutes.
+            </p>
+
+            <ul className="mt-6 lg:mt-8 grid sm:grid-cols-2 gap-2.5 lg:gap-3 max-w-xl">
+              {[
+                "First month free on 1 Gig & 2 Gig",
+                "2 Gig includes $100 back",
+                "Free professional installation",
+                "No payment collected today",
+              ].map((t) => (
+                <li
+                  key={t}
+                  className="flex items-start gap-3 text-[15px] lg:text-base font-medium"
+                >
+                  <CheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-7 lg:mt-10 flex flex-col sm:flex-row gap-3 sm:items-center">
+              <button
+                onClick={onStart}
+                className="w-full sm:w-auto bg-white text-magenta font-bold text-base lg:text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-0.5 active:scale-[0.99] transition"
+              >
+                Start Request →
+              </button>
+              <p className="text-xs lg:text-sm text-white/80 text-center sm:text-left">
+                Takes about 2 minutes
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> · </span>No payment today
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop preview card */}
+          <div className="hidden lg:block relative">
+            <div className="absolute -inset-6 bg-white/10 rounded-[2rem] blur-2xl" />
+            <div className="relative rounded-3xl bg-white text-ink shadow-2xl p-7 rotate-1 hover:rotate-0 transition-transform">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-magenta">
+                  Most Popular
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  AutoPay
+                </span>
+              </div>
+              <div className="mt-2 text-2xl font-black">Fiber 1 Gig</div>
+              <div className="text-sm text-muted-foreground">
+                1000 Mbps ↓ / 1000 Mbps ↑
+              </div>
+              <div className="mt-5 flex items-baseline gap-2">
+                <span className="text-5xl font-black tracking-tight">$60</span>
+                <span className="text-base font-semibold text-muted-foreground">
+                  /mo
+                </span>
+                <span className="text-sm text-muted-foreground line-through ml-1">
+                  $70
+                </span>
+              </div>
+              <div className="mt-1 text-xs font-bold text-magenta">
+                First month free
+              </div>
+              <div className="mt-5 h-px bg-border" />
+              <ul className="mt-4 space-y-2 text-sm">
+                {[
+                  "Wi-Fi router included",
+                  "Mesh extender as needed",
+                  "Unlimited data, no caps",
+                  "T-Mobile Tuesdays perks",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2">
+                    <CheckIcon className="h-4 w-4 text-magenta mt-0.5 shrink-0" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="absolute -bottom-4 -left-4 rounded-2xl bg-ink text-white px-4 py-3 shadow-xl text-sm font-semibold">
+              <span className="text-magenta">●</span> 2 Gig: $100 back
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-5 lg:px-8 py-8 lg:py-14 grid grid-cols-3 gap-3 lg:gap-6 text-center">
+        <Stat label="Fiber speeds" value="Up to 2 Gig" />
+        <Stat label="Pro install" value="Free" />
+        <Stat label="Data caps" value="None" />
+      </section>
+    </main>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl lg:rounded-2xl border bg-card p-3 lg:p-6">
+      <div className="text-sm lg:text-2xl font-bold lg:font-black text-foreground">
+        {value}
+      </div>
+      <div className="text-[11px] lg:text-sm text-muted-foreground mt-0.5 lg:mt-1">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function StepIndicator({
+  step,
+  onJump,
+}: {
+  step: number;
+  onJump: (s: number) => void;
+}) {
+  const labels = ["Plan", "Address", "Info", "Install"];
+  return (
+    <div className="sticky top-[57px] lg:top-[65px] z-30 bg-background/95 backdrop-blur border-b">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 lg:py-4">
+        <div className="flex items-center justify-between mb-1.5 lg:mb-2">
+          <span className="text-xs lg:text-sm font-semibold text-muted-foreground">
+            Step {step} of 4
+          </span>
+          <span className="text-xs lg:text-sm font-semibold text-magenta">
+            {labels[step - 1]}
+          </span>
+        </div>
+        <div className="flex gap-1.5 lg:gap-2">
 
 function Footer() {
   return (
