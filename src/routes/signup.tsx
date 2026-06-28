@@ -512,106 +512,6 @@ function StepIndicator({
           </span>
         </div>
         <div className="flex gap-1.5 lg:gap-2">
-
-function Footer() {
-  return (
-    <footer className="border-t bg-secondary/40 mt-auto">
-      <div className="max-w-xl mx-auto px-4 py-6 text-[11px] leading-relaxed text-muted-foreground">
-        Pricing shown with AutoPay. AutoPay discount requires debit card or linked
-        bank account. First month free applies to qualifying 1 Gig and 2 Gig
-        plans. $100 back applies to qualifying 2 Gig plan. Offers subject to
-        eligibility and availability. No payment is collected on this page.
-      </div>
-    </footer>
-  );
-}
-
-function Hero({ onStart }: { onStart: () => void }) {
-  return (
-    <main className="flex-1">
-      <section className="relative bg-magenta text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.4), transparent 50%), radial-gradient(circle at 80% 80%, rgba(0,0,0,0.3), transparent 50%)",
-          }}
-        />
-        <div className="relative max-w-xl mx-auto px-5 pt-8 pb-10">
-          <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
-            <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-            AVAILABLE AT YOUR ADDRESS
-          </span>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-black leading-tight tracking-tight">
-            Great news! T-Mobile Fiber is available at your address.
-          </h1>
-          <p className="mt-3 text-base sm:text-lg text-white/90">
-            Choose your plan and request an install time.
-          </p>
-
-          <ul className="mt-6 space-y-2.5">
-            {[
-              "First month free on 1 Gig & 2 Gig",
-              "2 Gig includes $100 back",
-              "Free professional installation",
-              "No payment collected today",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-3 text-[15px] font-medium">
-                <CheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
-
-          <button
-            onClick={onStart}
-            className="mt-7 w-full bg-white text-magenta font-bold text-base py-4 rounded-xl shadow-lg hover:shadow-xl active:scale-[0.99] transition"
-          >
-            Start Request →
-          </button>
-          <p className="mt-3 text-center text-xs text-white/80">
-            Takes about 2 minutes • No payment today
-          </p>
-        </div>
-      </section>
-
-      <section className="max-w-xl mx-auto px-5 py-8 grid grid-cols-3 gap-3 text-center">
-        <Stat label="Fiber speeds" value="Up to 2 Gig" />
-        <Stat label="Pro install" value="Free" />
-        <Stat label="Data caps" value="None" />
-      </section>
-    </main>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border bg-card p-3">
-      <div className="text-sm font-bold text-foreground">{value}</div>
-      <div className="text-[11px] text-muted-foreground mt-0.5">{label}</div>
-    </div>
-  );
-}
-
-function StepIndicator({
-  step,
-  onJump,
-}: {
-  step: number;
-  onJump: (s: number) => void;
-}) {
-  const labels = ["Plan", "Address", "Info", "Install"];
-  return (
-    <div className="sticky top-[57px] z-30 bg-background/95 backdrop-blur border-b">
-      <div className="max-w-xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">
-            Step {step} of 4
-          </span>
-          <span className="text-xs font-semibold text-magenta">
-            {labels[step - 1]}
-          </span>
-        </div>
-        <div className="flex gap-1.5">
           {labels.map((l, i) => {
             const idx = i + 1;
             const done = idx < step;
@@ -621,7 +521,7 @@ function StepIndicator({
                 key={l}
                 onClick={() => onJump(idx)}
                 disabled={!done}
-                className={`flex-1 h-1.5 rounded-full transition-all ${
+                className={`flex-1 h-1.5 lg:h-2 rounded-full transition-all ${
                   active
                     ? "bg-magenta"
                     : done
