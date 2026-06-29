@@ -1,25 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import logoAsset from "@/assets/tmobile-fiber-logo.png.asset.json";
 import { APPS_SCRIPT_URL, MAPBOX_TOKEN } from "@/lib/signup-config";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({
-    meta: [
-      { title: "T-Mobile Fiber — Request Your Install" },
-      {
-        name: "description",
-        content:
-          "T-Mobile Fiber is available at your address. Choose a plan and request your free professional install in minutes.",
-      },
-      { property: "og:title", content: "T-Mobile Fiber — Request Your Install" },
-      {
-        property: "og:description",
-        content:
-          "Choose your plan and request an install time. First month free on 1 Gig & 2 Gig.",
-      },
-    ],
-  }),
   component: SignupPage,
 });
 
@@ -79,9 +62,33 @@ const INSTALL_WINDOWS = [
   "First available",
 ];
 
+// Build available dates: first slot = today+2, then 2 weeks available (green),
+// every other date = unavailable (red/blocked)
+function buildCalendarDates() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const firstAvail = new Date(today);
+  firstAvail.setDate(today.getDate() + 2);
+
+  const available: string[] = [];
+  const unavailable: string[] = [];
+
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(firstAvail);
+    d.setDate(firstAvail.getDate() + i);
+    const iso = d.toISOString().split("T")[0];
+    if (i % 2 === 0) {
+      available.push(iso);
+    } else {
+      unavailable.push(iso);
+    }
+  }
+  return { available, unavailable, firstAvail };
+}
+
 // ---------------- Page ----------------
 
-type Step = 0 | 1 | 2 | 3 | 4 | 5; // 0 = hero, 1-4 steps, 5 = success
+type Step = 0 | 1 | 2 | 3 | 4 | 5;
 
 interface FormState {
   plan: PlanId | "";
@@ -121,6 +128,7 @@ const INITIAL: FormState = {
 
 function SignupPage() {
   const [step, setStep] = useState<Step>(0);
+  const [transitioning, setTransitioning] = useState(false);
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -128,11 +136,14 @@ function SignupPage() {
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  useEffect(() => {
-    if (step >= 1 && step <= 4) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [step]);
+  const goTo = (next: Step) => {
+    setTransitioning(true);
+    setTimeout(() => {
+      setStep(next);
+      setTransitioning(false);
+      if (next >= 1) window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 550);
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -158,17 +169,16 @@ function SignupPage() {
 
     try {
       if (!APPS_SCRIPT_URL) {
-        // No endpoint configured — log so the developer can test the flow.
         console.warn("[signup] APPS_SCRIPT_URL not configured. Payload:", payload);
       } else {
         await fetch(APPS_SCRIPT_URL, {
           method: "POST",
-          mode: "no-cors", // Apps Script web apps require no-cors from browsers
+          mode: "no-cors",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload),
         });
       }
-      setStep(5);
+      goTo(5);
     } catch (err) {
       console.error(err);
       setSubmitError("Something went wrong sending your request. Please try again.");
@@ -178,14 +188,24 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      {step === 0 && <Hero onStart={() => setStep(1)} />}
+      {/* Step transition spinner overlay */}
+      {transitioning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-12 w-12 rounded-full border-4 border-border border-t-magenta animate-spin" />
+            <p className="text-sm font-semibold text-muted-foreground">Loading…</p>
+          </div>
+        </div>
+      )}
+
+      {step === 0 && <Hero onStart={() => goTo(1)} />}
 
       {step >= 1 && step <= 4 && (
         <>
-          <StepIndicator step={step} onJump={(s) => s < step && setStep(s as Step)} />
+          <StepIndicator step={step} onJump={(s) => s < step && goTo(s as Step)} />
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 lg:px-8 pb-32 lg:pb-12 pt-2">
             <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10 lg:items-start">
               <div className="w-full max-w-xl mx-auto lg:mx-0">
@@ -193,30 +213,30 @@ function SignupPage() {
                   <StepPlan
                     value={form.plan}
                     onChange={(p) => update("plan", p)}
-                    onNext={() => setStep(2)}
+                    onNext={() => goTo(2)}
                   />
                 )}
                 {step === 2 && (
                   <StepAddress
                     form={form}
                     update={update}
-                    onBack={() => setStep(1)}
-                    onNext={() => setStep(3)}
+                    onBack={() => goTo(1)}
+                    onNext={() => goTo(3)}
                   />
                 )}
                 {step === 3 && (
                   <StepCustomer
                     form={form}
                     update={update}
-                    onBack={() => setStep(2)}
-                    onNext={() => setStep(4)}
+                    onBack={() => goTo(2)}
+                    onNext={() => goTo(4)}
                   />
                 )}
                 {step === 4 && (
                   <StepInstall
                     form={form}
                     update={update}
-                    onBack={() => setStep(3)}
+                    onBack={() => goTo(3)}
                     onSubmit={submit}
                     submitting={submitting}
                     error={submitError}
@@ -236,21 +256,203 @@ function SignupPage() {
   );
 }
 
+// ---------------- Layout pieces ----------------
+
+function Header() {
+  return (
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
+        <img
+          src="/tmobile-fiber-logo.png"
+          alt="T-Mobile Fiber"
+          className="h-9 lg:h-11 w-auto"
+          width={180}
+          height={44}
+        />
+        <div className="flex items-center gap-4">
+          <span className="hidden md:inline text-sm text-gray-500">Need help?</span>
+          <a
+            href="sms:8886438620?&body=FIBER"
+            className="text-xs lg:text-sm font-bold text-magenta hover:underline"
+          >
+            Text FIBER to 888-643-8620
+          </a>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-t border-gray-200 bg-gray-50 mt-auto">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 text-[11px] leading-relaxed text-gray-500">
+        Pricing shown with AutoPay. AutoPay discount requires debit card or linked bank account.
+        First month free applies to qualifying 1 Gig and 2 Gig plans. $100 back applies to
+        qualifying 2 Gig plan. Offers subject to eligibility and availability. No payment is
+        collected on this page.
+      </div>
+    </footer>
+  );
+}
+
+// ---------------- Hero ----------------
+
+function Hero({ onStart }: { onStart: () => void }) {
+  return (
+    <main className="flex-1">
+      {/* ── Compact T-Mobile-style hero ── */}
+      <section className="relative bg-black text-white overflow-hidden">
+        {/* Hero image — right side on desktop, behind content on mobile */}
+        <div className="absolute inset-0 lg:left-[45%]">
+          <img
+            src="/hero-gaming.png"
+            alt="People enjoying fast fiber internet"
+            className="h-full w-full object-cover object-center"
+          />
+          {/* Fade left so text is always readable */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to right, #000 0%, #000 45%, rgba(0,0,0,0.7) 60%, transparent 100%)",
+            }}
+          />
+        </div>
+        {/* Mobile overlay so text pops over the image */}
+        <div className="absolute inset-0 lg:hidden bg-black/70" />
+
+        <div className="relative max-w-6xl mx-auto px-5 lg:px-8 py-10 lg:py-14">
+          <div className="max-w-lg">
+            {/* Badge */}
+            <span className="inline-flex items-center gap-2 bg-magenta rounded-full px-3 py-1 text-xs font-black tracking-widest uppercase text-white">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              T-Mobile Fiber is in your area
+            </span>
+
+            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.06] tracking-tight text-white text-balance">
+              You got the door hanger.<br />
+              Now get the internet.
+            </h1>
+            <p className="mt-3 text-base sm:text-lg text-white/80 leading-relaxed max-w-md">
+              Ultra-fast fiber speeds. Free install. No annual contract. Request your
+              install in under 2 minutes.
+            </p>
+
+            {/* Key benefits */}
+            <ul className="mt-5 grid grid-cols-2 gap-2">
+              {[
+                "First month free (1 & 2 Gig)",
+                "$100 back on 2 Gig",
+                "Free pro installation",
+                "No payment today",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2 text-sm font-medium text-white/90">
+                  <CheckIcon className="h-4 w-4 text-magenta shrink-0 mt-0.5" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              onClick={onStart}
+              className="mt-7 w-full sm:w-auto bg-magenta text-white font-black text-lg px-10 py-4 rounded-full hover:bg-magenta-dark active:scale-[0.98] transition-all shadow-lg"
+            >
+              Get Started →
+            </button>
+            <p className="mt-2 text-xs text-white/40">
+              Takes about 2 minutes &middot; No payment collected
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust bar */}
+      <section className="bg-magenta text-white">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 py-4 flex flex-wrap justify-center gap-6 lg:gap-12 text-sm font-bold">
+          <span className="flex items-center gap-2">
+            <CheckIcon className="h-4 w-4" /> Up to 2 Gig speeds
+          </span>
+          <span className="flex items-center gap-2">
+            <CheckIcon className="h-4 w-4" /> Free professional install
+          </span>
+          <span className="flex items-center gap-2">
+            <CheckIcon className="h-4 w-4" /> No annual contract
+          </span>
+          <span className="flex items-center gap-2">
+            <CheckIcon className="h-4 w-4" /> Unlimited data
+          </span>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ---------------- Step indicator ----------------
+
+function StepIndicator({
+  step,
+  onJump,
+}: {
+  step: number;
+  onJump: (s: number) => void;
+}) {
+  const labels = ["Plan", "Address", "Info", "Install"];
+  return (
+    <div className="sticky top-[57px] lg:top-[65px] z-30 bg-white border-b border-gray-200">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 lg:py-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs lg:text-sm font-semibold text-gray-500">
+            Step {step} of 4
+          </span>
+          <span className="text-xs lg:text-sm font-bold text-magenta">
+            {labels[step - 1]}
+          </span>
+        </div>
+        <div className="flex gap-1.5 lg:gap-2">
+          {labels.map((l, i) => {
+            const idx = i + 1;
+            const done = idx < step;
+            const active = idx === step;
+            return (
+              <button
+                key={l}
+                onClick={() => onJump(idx)}
+                disabled={!done}
+                className={`flex-1 h-1.5 lg:h-2 rounded-full transition-all ${
+                  active
+                    ? "bg-magenta"
+                    : done
+                      ? "bg-magenta/50 cursor-pointer"
+                      : "bg-gray-200 cursor-default"
+                }`}
+                aria-label={`Go to step ${idx}: ${l}`}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------- Desktop Summary ----------------
+
 function DesktopSummary({ step, form }: { step: number; form: FormState }) {
   const plan = PLANS.find((p) => p.id === form.plan);
   return (
     <aside className="hidden lg:block sticky top-32 mt-4">
-      <div className="rounded-3xl border-2 border-border bg-card overflow-hidden shadow-sm">
-        <div className="bg-magenta text-white px-6 py-5">
-          <div className="text-[11px] font-bold uppercase tracking-widest opacity-90">
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+        <div className="bg-black text-white px-6 py-5">
+          <div className="text-[10px] font-black uppercase tracking-widest text-magenta mb-1">
             Your install request
           </div>
-          <div className="mt-1 text-lg font-extrabold">
+          <div className="text-lg font-extrabold">
             {plan ? plan.name : "Choose a plan to begin"}
           </div>
           {plan && (
-            <div className="mt-1 text-sm text-white/90">
-              {plan.price}/mo · {plan.speed}
+            <div className="mt-0.5 text-sm text-white/70">
+              {plan.price}/mo &middot; {plan.speed}
             </div>
           )}
         </div>
@@ -277,13 +479,13 @@ function DesktopSummary({ step, form }: { step: number; form: FormState }) {
             active={step >= 4 && !!form.installDate}
           />
         </div>
-        <div className="border-t bg-secondary/50 px-6 py-4 space-y-2">
+        <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 space-y-2">
           {[
             "Free professional installation",
             "No payment collected today",
             "Cancel anytime before install",
           ].map((t) => (
-            <div key={t} className="flex items-start gap-2 text-xs text-foreground/80">
+            <div key={t} className="flex items-start gap-2 text-xs text-gray-600">
               <CheckIcon className="h-4 w-4 text-magenta shrink-0 mt-0.5" />
               <span>{t}</span>
             </div>
@@ -307,245 +509,15 @@ function SummaryRow({
 }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+      <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 shrink-0">
         {label}
       </span>
       <span
-        className={`text-right text-sm font-semibold ${
-          active ? "text-foreground" : "text-muted-foreground"
-        } ${truncate ? "truncate max-w-[200px]" : ""}`}
+        className={`text-right text-sm font-semibold ${active ? "text-black" : "text-gray-400"} ${truncate ? "truncate max-w-[200px]" : ""}`}
         title={value}
       >
         {value}
       </span>
-    </div>
-  );
-}
-
-// ---------------- Layout pieces ----------------
-
-function Header() {
-  return (
-    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
-        <img
-          src={logoAsset.url}
-          alt="T-Mobile Fiber"
-          className="h-8 lg:h-10 w-auto"
-          width={140}
-          height={40}
-        />
-        <div className="flex items-center gap-4">
-          <span className="hidden md:inline text-sm text-muted-foreground">
-            Need help?
-          </span>
-          <a
-            href="sms:8886438620?&body=FIBER"
-            className="text-xs lg:text-sm font-semibold text-magenta hover:underline"
-          >
-            Text FIBER to 888-643-8620
-          </a>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t bg-secondary/40 mt-auto">
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 text-[11px] leading-relaxed text-muted-foreground">
-        Pricing shown with AutoPay. AutoPay discount requires debit card or linked
-        bank account. First month free applies to qualifying 1 Gig and 2 Gig
-        plans. $100 back applies to qualifying 2 Gig plan. Offers subject to
-        eligibility and availability. No payment is collected on this page.
-      </div>
-    </footer>
-  );
-}
-
-function Hero({ onStart }: { onStart: () => void }) {
-  return (
-    <main className="flex-1">
-      {/* ── Hero: black + magenta ── */}
-      <section className="relative bg-ink text-white overflow-hidden">
-        {/* Magenta glow orbs */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 60% at 0% 100%, rgba(226,0,116,0.35) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 100% 0%, rgba(226,0,116,0.20) 0%, transparent 55%)",
-          }}
-        />
-        {/* Diagonal magenta accent */}
-        <div
-          className="absolute top-0 right-0 w-1/3 h-full pointer-events-none opacity-10"
-          style={{ background: "linear-gradient(135deg, transparent 40%, #E20074 100%)" }}
-        />
-
-        <div className="relative max-w-6xl mx-auto px-5 lg:px-8 pt-10 lg:pt-20 pb-12 lg:pb-24 grid lg:grid-cols-2 lg:gap-16 items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 bg-magenta/20 border border-magenta/40 rounded-full px-3 py-1 text-xs font-black tracking-widest uppercase text-magenta">
-              <span className="h-2 w-2 rounded-full bg-magenta animate-pulse" />
-              Available at your address
-            </span>
-            <h1 className="mt-5 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight">
-              Great news!{" "}
-              <span className="text-magenta">T-Mobile Fiber</span>{" "}
-              is available at your address.
-            </h1>
-            <p className="mt-4 lg:mt-6 text-base sm:text-lg lg:text-xl text-white/70 max-w-lg leading-relaxed">
-              Choose your plan and request an install time. Takes about 2 minutes.
-            </p>
-
-            <ul className="mt-6 lg:mt-8 grid sm:grid-cols-2 gap-2.5 lg:gap-3 max-w-xl">
-              {[
-                "First month free on 1 Gig & 2 Gig",
-                "2 Gig includes $100 back",
-                "Free professional installation",
-                "No payment collected today",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3 text-[15px] lg:text-base font-medium text-white/90">
-                  <span className="h-5 w-5 shrink-0 mt-0.5 rounded-full bg-magenta/20 border border-magenta flex items-center justify-center">
-                    <CheckIcon className="h-3 w-3 text-magenta" />
-                  </span>
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-8 lg:mt-12 flex flex-col sm:flex-row gap-3 sm:items-center">
-              <button
-                onClick={onStart}
-                className="w-full sm:w-auto bg-magenta text-white font-black text-base lg:text-lg px-10 py-4 rounded-xl shadow-[0_0_32px_rgba(226,0,116,0.55)] hover:shadow-[0_0_48px_rgba(226,0,116,0.75)] hover:-translate-y-0.5 active:scale-[0.99] transition-all"
-              >
-                Start Request →
-              </button>
-              <p className="text-xs lg:text-sm text-white/50 text-center sm:text-left">
-                Takes about 2 minutes
-                <br className="hidden sm:block" />
-                <span className="sm:hidden"> · </span>No payment today
-              </p>
-            </div>
-          </div>
-
-          {/* Desktop preview card */}
-          <div className="hidden lg:block relative">
-            <div
-              className="absolute -inset-8 rounded-[3rem] blur-3xl opacity-40"
-              style={{ background: "radial-gradient(ellipse at center, #E20074 0%, transparent 70%)" }}
-            />
-            <div className="relative rounded-3xl bg-white/[0.05] border border-white/10 backdrop-blur-sm text-white shadow-2xl p-7 rotate-1 hover:rotate-0 transition-transform">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-magenta bg-magenta/15 border border-magenta/30 px-2.5 py-0.5 rounded-full">
-                  Best Promo
-                </span>
-                <span className="text-xs font-semibold text-white/40">AutoPay</span>
-              </div>
-              <div className="mt-3 text-2xl font-black">Fiber 2 Gig</div>
-              <div className="text-sm text-white/50">2000 Mbps ↓ / 1000 Mbps ↑</div>
-              <div className="mt-5 flex items-baseline gap-2">
-                <span className="text-5xl font-black tracking-tight text-white">$70</span>
-                <span className="text-base font-semibold text-white/50">/mo</span>
-                <span className="text-sm text-white/30 line-through ml-1">$80</span>
-              </div>
-              <div className="mt-2 flex gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
-                  <CheckIcon className="h-2.5 w-2.5" /> First month free
-                </span>
-                <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
-                  <CheckIcon className="h-2.5 w-2.5" /> $100 back
-                </span>
-              </div>
-              <div className="mt-4 h-px bg-white/10" />
-              <ul className="mt-4 space-y-2 text-sm">
-                {[
-                  "Wi-Fi router included",
-                  "Mesh extender as needed",
-                  "Unlimited data, no caps",
-                  "T-Mobile Tuesdays perks",
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-2 text-white/80">
-                    <CheckIcon className="h-4 w-4 text-magenta mt-0.5 shrink-0" />
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="absolute -bottom-4 -right-4 rounded-2xl bg-magenta text-white px-4 py-3 shadow-[0_0_24px_rgba(226,0,116,0.6)] text-sm font-black">
-              2 Gig: $100 back
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="bg-ink border-t border-white/10">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8 py-6 lg:py-10 grid grid-cols-3 gap-3 lg:gap-6 text-center">
-          <Stat label="Fiber speeds" value="Up to 2 Gig" />
-          <Stat label="Pro install" value="Free" />
-          <Stat label="Data caps" value="None" />
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl lg:rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-6">
-      <div className="text-sm lg:text-2xl font-bold lg:font-black text-white">
-        {value}
-      </div>
-      <div className="text-[11px] lg:text-sm text-white/50 mt-0.5 lg:mt-1">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function StepIndicator({
-  step,
-  onJump,
-}: {
-  step: number;
-  onJump: (s: number) => void;
-}) {
-  const labels = ["Plan", "Address", "Info", "Install"];
-  return (
-    <div className="sticky top-[57px] lg:top-[65px] z-30 bg-background/95 backdrop-blur border-b">
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-3 lg:py-4">
-        <div className="flex items-center justify-between mb-1.5 lg:mb-2">
-          <span className="text-xs lg:text-sm font-semibold text-muted-foreground">
-            Step {step} of 4
-          </span>
-          <span className="text-xs lg:text-sm font-semibold text-magenta">
-            {labels[step - 1]}
-          </span>
-        </div>
-        <div className="flex gap-1.5 lg:gap-2">
-          {labels.map((l, i) => {
-            const idx = i + 1;
-            const done = idx < step;
-            const active = idx === step;
-            return (
-              <button
-                key={l}
-                onClick={() => onJump(idx)}
-                disabled={!done}
-                className={`flex-1 h-1.5 lg:h-2 rounded-full transition-all ${
-                  active
-                    ? "bg-magenta"
-                    : done
-                      ? "bg-magenta/60 cursor-pointer"
-                      : "bg-border cursor-default"
-                }`}
-                aria-label={`Go to step ${idx}: ${l}`}
-              />
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
@@ -563,8 +535,8 @@ function StepPlan({
 }) {
   return (
     <div className="pt-4">
-      <h2 className="text-2xl font-extrabold tracking-tight">Pick your plan</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <h2 className="text-2xl font-extrabold tracking-tight text-black">Pick your plan</h2>
+      <p className="mt-1 text-sm text-gray-500">
         All plans include free pro install and unlimited data.
       </p>
 
@@ -581,56 +553,51 @@ function StepPlan({
               className={`w-full text-left rounded-2xl border-2 p-5 transition-all relative overflow-hidden ${
                 selected
                   ? plan.highlight
-                    ? "border-magenta bg-ink shadow-[0_0_28px_rgba(226,0,116,0.35)] scale-[1.01]"
-                    : "border-magenta bg-accent shadow-lg scale-[1.01]"
+                    ? "border-magenta bg-black scale-[1.01]"
+                    : "border-magenta bg-white scale-[1.01] shadow-md"
                   : plan.highlight
-                    ? "border-magenta bg-ink hover:shadow-[0_0_20px_rgba(226,0,116,0.2)]"
-                    : "border-border bg-card hover:border-foreground/30"
+                    ? "border-magenta bg-black"
+                    : "border-gray-200 bg-white hover:border-gray-400"
               }`}
             >
-              {/* Background glow for highlight plan */}
               {plan.highlight && (
                 <div
-                  className="absolute inset-0 pointer-events-none opacity-20"
+                  className="absolute inset-0 pointer-events-none opacity-15"
                   style={{ background: "radial-gradient(ellipse 80% 80% at 0% 100%, #E20074, transparent)" }}
                 />
               )}
 
               {plan.badge && (
-                <span
-                  className="absolute -top-px -right-px text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-bl-xl rounded-tr-xl bg-magenta text-white"
-                >
+                <span className="absolute -top-px -right-px text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-bl-xl rounded-tr-xl bg-magenta text-white">
                   {plan.badge}
                 </span>
               )}
 
               <div className="flex items-start justify-between gap-3 relative">
                 <div className="min-w-0">
-                  <div className={`font-extrabold text-xl leading-tight ${plan.highlight ? "text-white" : "text-foreground"}`}>
+                  <div className={`font-extrabold text-xl leading-tight ${plan.highlight ? "text-white" : "text-black"}`}>
                     {plan.name}
                   </div>
-                  <div className={`text-xs mt-0.5 ${plan.highlight ? "text-white/60" : "text-muted-foreground"}`}>
+                  <div className={`text-xs mt-0.5 ${plan.highlight ? "text-white/60" : "text-gray-500"}`}>
                     {plan.speed}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className={`text-3xl font-black leading-none ${plan.highlight ? "text-white" : "text-foreground"}`}>
-                    {plan.price}
-                    <span className="text-sm font-semibold">/mo</span>
+                  <div className={`text-3xl font-black leading-none ${plan.highlight ? "text-white" : "text-black"}`}>
+                    {plan.price}<span className="text-sm font-semibold">/mo</span>
                   </div>
-                  <div className={`text-[11px] line-through mt-0.5 ${plan.highlight ? "text-white/40" : "text-muted-foreground"}`}>
+                  <div className={`text-[11px] line-through mt-0.5 ${plan.highlight ? "text-white/40" : "text-gray-400"}`}>
                     {plan.regular}
                   </div>
                 </div>
               </div>
 
-              {/* Promo pills */}
               {plan.id === "fiber-2gig" && (
                 <div className="relative mt-3 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1 bg-magenta/20 border border-magenta/50 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
                     <CheckIcon className="h-3 w-3" /> First month free
                   </span>
-                  <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1 bg-magenta/20 border border-magenta/50 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
                     <CheckIcon className="h-3 w-3" /> $100 back
                   </span>
                 </div>
@@ -643,20 +610,14 @@ function StepPlan({
                 </div>
               )}
 
-              <p className={`mt-3 text-[13px] leading-relaxed relative ${plan.highlight ? "text-white/70" : "text-foreground/80"}`}>
+              <p className={`mt-3 text-[13px] leading-relaxed relative ${plan.highlight ? "text-white/70" : "text-gray-600"}`}>
                 {plan.features}
               </p>
               <div className="mt-3 flex items-center justify-between relative">
-                <span className={`text-[11px] ${plan.highlight ? "text-white/40" : "text-muted-foreground"}`}>
-                  With AutoPay
-                </span>
+                <span className={`text-[11px] ${plan.highlight ? "text-white/40" : "text-gray-400"}`}>With AutoPay</span>
                 <span
-                  className={`h-6 w-6 rounded-full grid place-items-center border-2 ${
-                    selected
-                      ? "border-magenta bg-magenta text-white"
-                      : plan.highlight
-                        ? "border-white/30"
-                        : "border-border"
+                  className={`h-6 w-6 rounded-full grid place-items-center border-2 transition-all ${
+                    selected ? "border-magenta bg-magenta text-white" : plan.highlight ? "border-white/30" : "border-gray-300"
                   }`}
                 >
                   {selected && <CheckIcon className="h-3.5 w-3.5" />}
@@ -667,9 +628,7 @@ function StepPlan({
         })}
       </div>
 
-      {value && (
-        <StickyCta onClick={onNext}>Continue →</StickyCta>
-      )}
+      {value && <StickyCta onClick={onNext}>Continue →</StickyCta>}
     </div>
   );
 }
@@ -705,38 +664,27 @@ function StepAddress({
     if (!query || query === form.fullAddress) return;
     setPicked(false);
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    if (query.length < 3) {
-      setResults([]);
-      return;
-    }
+    if (query.length < 3) { setResults([]); return; }
     debounceRef.current = window.setTimeout(async () => {
       try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          query,
-        )}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&country=US&types=address&limit=6`;
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&country=US&types=address&limit=6`;
         const res = await fetch(url);
         const data = await res.json();
         setResults(data.features ?? []);
         setOpen(true);
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) { console.error(e); }
     }, 250);
-    return () => {
-      if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
   }, [query, form.fullAddress]);
 
   const pick = (f: MapboxFeature) => {
     const ctx = f.context ?? [];
-    const get = (prefix: string) =>
-      ctx.find((c) => c.id.startsWith(prefix));
+    const get = (prefix: string) => ctx.find((c) => c.id.startsWith(prefix));
     const city = get("place")?.text ?? "";
     const stateObj = get("region");
     const stateCode = stateObj?.short_code?.replace("US-", "") ?? stateObj?.text ?? "";
     const zip = get("postcode")?.text ?? "";
     const street = `${f.address ? f.address + " " : ""}${f.text}`.trim();
-
     update("fullAddress", f.place_name);
     update("street", street);
     update("city", city);
@@ -749,20 +697,14 @@ function StepAddress({
   };
 
   const handleNext = () => {
-    if (!picked || !form.fullAddress) {
-      setError("Please select your address from the list.");
-      return;
-    }
+    if (!picked || !form.fullAddress) { setError("Please select your address from the list."); return; }
     onNext();
   };
 
   return (
     <div className="pt-4">
-      <h2 className="text-2xl font-extrabold tracking-tight">Service address</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Where do you want T-Mobile Fiber installed?
-      </p>
-
+      <h2 className="text-2xl font-extrabold tracking-tight text-black">Service address</h2>
+      <p className="mt-1 text-sm text-gray-500">Where do you want T-Mobile Fiber installed?</p>
       <div className="mt-5 space-y-4">
         <div className="relative">
           <Label>Service address</Label>
@@ -771,22 +713,19 @@ function StepAddress({
             inputMode="text"
             autoComplete="off"
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setError(null);
-            }}
+            onChange={(e) => { setQuery(e.target.value); setError(null); }}
             onFocus={() => results.length && setOpen(true)}
             placeholder="Start typing your address…"
             className={inputCls(!!error && !picked)}
           />
           {open && results.length > 0 && (
-            <ul className="absolute z-20 left-0 right-0 mt-1 bg-card border rounded-xl shadow-xl max-h-72 overflow-auto">
+            <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-72 overflow-auto">
               {results.map((f, i) => (
                 <li key={i}>
                   <button
                     type="button"
                     onClick={() => pick(f)}
-                    className="w-full text-left px-4 py-3 hover:bg-accent text-sm border-b last:border-b-0"
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm border-b border-gray-100 last:border-b-0"
                   >
                     {f.place_name}
                   </button>
@@ -796,12 +735,11 @@ function StepAddress({
           )}
           {error && <FieldError>{error}</FieldError>}
           {picked && (
-            <p className="mt-2 text-xs text-success font-medium flex items-center gap-1">
+            <p className="mt-2 text-xs text-green-600 font-semibold flex items-center gap-1">
               <CheckIcon className="h-3.5 w-3.5" /> Address confirmed
             </p>
           )}
         </div>
-
         <div>
           <Label optional>Apt / Unit</Label>
           <input
@@ -813,7 +751,6 @@ function StepAddress({
           />
         </div>
       </div>
-
       <NavRow onBack={onBack} onNext={handleNext} nextDisabled={!picked} />
     </div>
   );
@@ -836,13 +773,11 @@ function StepCustomer({
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.fullName.trim() || form.fullName.trim().split(/\s+/).length < 2) {
+    if (!form.fullName.trim() || form.fullName.trim().split(/\s+/).length < 2)
       e.fullName = "Enter your first and last name.";
-    }
     const phoneDigits = form.phone.replace(/\D/g, "");
     if (phoneDigits.length !== 10) e.phone = "Enter a 10-digit phone number.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      e.email = "Enter a valid email.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email.";
     if (!form.dob) e.dob = "Enter your date of birth.";
     else {
       const d = new Date(form.dob);
@@ -854,57 +789,17 @@ function StepCustomer({
     return Object.keys(e).length === 0;
   };
 
-  const next = () => {
-    if (validate()) onNext();
-  };
-
   return (
     <div className="pt-4">
-      <h2 className="text-2xl font-extrabold tracking-tight">Your info</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        We'll only use this to confirm your install.
-      </p>
-
+      <h2 className="text-2xl font-extrabold tracking-tight text-black">Your info</h2>
+      <p className="mt-1 text-sm text-gray-500">{"We'll only use this to confirm your install."}</p>
       <div className="mt-5 space-y-4">
-        <Field
-          label="Full name"
-          error={errors.fullName}
-          value={form.fullName}
-          onChange={(v) => update("fullName", v)}
-          placeholder="Jane Smith"
-          autoComplete="name"
-        />
-        <Field
-          label="Phone number"
-          error={errors.phone}
-          value={form.phone}
-          onChange={(v) => update("phone", formatPhone(v))}
-          placeholder="(555) 123-4567"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-        />
-        <Field
-          label="Email address"
-          error={errors.email}
-          value={form.email}
-          onChange={(v) => update("email", v)}
-          placeholder="you@example.com"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-        />
-        <Field
-          label="Date of birth"
-          error={errors.dob}
-          value={form.dob}
-          onChange={(v) => update("dob", v)}
-          type="date"
-          autoComplete="bday"
-        />
+        <Field label="Full name" error={errors.fullName} value={form.fullName} onChange={(v) => update("fullName", v)} placeholder="Jane Smith" autoComplete="name" />
+        <Field label="Phone number" error={errors.phone} value={form.phone} onChange={(v) => update("phone", formatPhone(v))} placeholder="(555) 123-4567" type="tel" inputMode="tel" autoComplete="tel" />
+        <Field label="Email address" error={errors.email} value={form.email} onChange={(v) => update("email", v)} placeholder="you@example.com" type="email" inputMode="email" autoComplete="email" />
+        <Field label="Date of birth" error={errors.dob} value={form.dob} onChange={(v) => update("dob", v)} type="date" autoComplete="bday" />
       </div>
-
-      <NavRow onBack={onBack} onNext={next} />
+      <NavRow onBack={onBack} onNext={() => { if (validate()) onNext(); }} />
     </div>
   );
 }
@@ -927,49 +822,55 @@ function StepInstall({
   error: string | null;
 }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { available, unavailable, firstAvail } = useMemo(() => buildCalendarDates(), []);
 
-  const minDate = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
-    return d.toISOString().split("T")[0];
-  }, []);
+  // Build full calendar: show month(s) containing the available range
+  const calendarDays = useMemo(() => {
+    const days: { iso: string; day: number; status: "available" | "unavailable" | "past" }[] = [];
+    // Show 5 weeks starting from the Monday before firstAvail
+    const start = new Date(firstAvail);
+    const dow = start.getDay(); // 0=sun
+    start.setDate(start.getDate() - ((dow + 6) % 7)); // rewind to Monday
+
+    for (let i = 0; i < 35; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const iso = d.toISOString().split("T")[0];
+      let status: "available" | "unavailable" | "past" = "past";
+      if (available.includes(iso)) status = "available";
+      else if (unavailable.includes(iso)) status = "unavailable";
+      days.push({ iso, day: d.getDate(), status });
+    }
+    return days;
+  }, [available, unavailable, firstAvail]);
+
+  const calendarMonth = useMemo(() => {
+    return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(firstAvail);
+  }, [firstAvail]);
 
   const validate = () => {
     const e: Record<string, string> = {};
-    // PIN
     if (!/^\d{6}$/.test(form.pin)) e.pin = "PIN must be exactly 6 digits.";
-    else if (/^(\d)\1{5}$/.test(form.pin))
-      e.pin = "PIN can't be all the same digit.";
-    else if (form.pin === "123456" || form.pin === "654321")
-      e.pin = "That sequence isn't allowed.";
+    else if (/^(\d)\1{5}$/.test(form.pin)) e.pin = "PIN can't be all the same digit.";
+    else if (form.pin === "123456" || form.pin === "654321") e.pin = "That sequence isn't allowed.";
     else if (form.dob) {
       const dobDigits = form.dob.replace(/\D/g, "");
       if (dobDigits.includes(form.pin)) e.pin = "PIN can't match your birthday.";
     }
-
     if (!form.installDate) e.installDate = "Pick a preferred date.";
-    else if (form.installDate < minDate)
-      e.installDate = "Date must be at least 2 days from today.";
-
     if (!form.installTime) e.installTime = "Pick a preferred time window.";
     if (!form.consent) e.consent = "Consent is required to submit.";
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handle = () => {
-    if (validate()) onSubmit();
-  };
-
   return (
     <div className="pt-4">
-      <h2 className="text-2xl font-extrabold tracking-tight">Install request</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Almost done — pick your install window.
-      </p>
+      <h2 className="text-2xl font-extrabold tracking-tight text-black">Install request</h2>
+      <p className="mt-1 text-sm text-gray-500">Almost done — pick your install window.</p>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-5 space-y-5">
+        {/* PIN */}
         <div>
           <Label>6-digit account PIN</Label>
           <input
@@ -982,25 +883,74 @@ function StepInstall({
             placeholder="••••••"
             className={`${inputCls(!!errors.pin)} tracking-[0.5em] text-center font-bold text-lg`}
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Create a 6-digit account PIN for account access. Do not use your
-            birthday or a simple sequence.
+          <p className="mt-1.5 text-xs text-gray-500">
+            Create a 6-digit account PIN for account access. Do not use your birthday or a simple sequence.
           </p>
           {errors.pin && <FieldError>{errors.pin}</FieldError>}
         </div>
 
+        {/* Custom white calendar */}
         <div>
           <Label>Preferred install date</Label>
-          <input
-            type="date"
-            min={minDate}
-            value={form.installDate}
-            onChange={(e) => update("installDate", e.target.value)}
-            className={inputCls(!!errors.installDate)}
-          />
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+            {/* Calendar header */}
+            <div className="bg-black text-white px-4 py-3 text-sm font-bold text-center">
+              {calendarMonth}
+            </div>
+            {/* Day-of-week headers */}
+            <div className="grid grid-cols-7 border-b border-gray-100">
+              {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d) => (
+                <div key={d} className="py-2 text-center text-[11px] font-bold text-gray-400 uppercase">
+                  {d}
+                </div>
+              ))}
+            </div>
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7">
+              {calendarDays.map(({ iso, day, status }) => {
+                const isSelected = form.installDate === iso;
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    disabled={status !== "available"}
+                    onClick={() => { if (status === "available") { update("installDate", iso); setErrors((e) => ({ ...e, installDate: "" })); } }}
+                    className={`
+                      relative flex items-center justify-center aspect-square text-sm font-semibold transition-all
+                      ${status === "available"
+                        ? isSelected
+                          ? "bg-magenta text-white font-black"
+                          : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                        : status === "unavailable"
+                          ? "bg-red-50 text-red-300 cursor-not-allowed"
+                          : "bg-white text-gray-200 cursor-not-allowed"
+                      }
+                    `}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Legend */}
+            <div className="px-4 py-3 border-t border-gray-100 flex gap-4 text-[11px] text-gray-500">
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-sm bg-green-100 border border-green-300" /> Available
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-sm bg-red-50 border border-red-200" /> Unavailable
+              </span>
+            </div>
+          </div>
+          {form.installDate && (
+            <p className="mt-2 text-xs text-green-600 font-semibold flex items-center gap-1">
+              <CheckIcon className="h-3.5 w-3.5" /> {form.installDate} selected
+            </p>
+          )}
           {errors.installDate && <FieldError>{errors.installDate}</FieldError>}
         </div>
 
+        {/* Time windows */}
         <div>
           <Label>Preferred install time</Label>
           <div className="grid grid-cols-2 gap-2">
@@ -1013,8 +963,8 @@ function StepInstall({
                   onClick={() => update("installTime", w)}
                   className={`py-3 px-2 rounded-xl border-2 text-sm font-semibold transition ${
                     active
-                      ? "border-magenta bg-accent text-magenta"
-                      : "border-border bg-card hover:border-foreground/30"
+                      ? "border-magenta bg-magenta/10 text-magenta"
+                      : "border-gray-200 bg-white hover:border-gray-400 text-black"
                   }`}
                 >
                   {w}
@@ -1025,6 +975,7 @@ function StepInstall({
           {errors.installTime && <FieldError>{errors.installTime}</FieldError>}
         </div>
 
+        {/* Consent */}
         <label className="flex gap-3 items-start cursor-pointer pt-2">
           <input
             type="checkbox"
@@ -1032,20 +983,17 @@ function StepInstall({
             onChange={(e) => update("consent", e.target.checked)}
             className="mt-1 h-5 w-5 accent-magenta shrink-0"
           />
-          <span className="text-[13px] leading-relaxed text-foreground/85">
-            I agree to be contacted by call, text, or email about T-Mobile Fiber
-            options for this address. Message/data rates may apply. Reply STOP
-            to opt out.
+          <span className="text-[13px] leading-relaxed text-gray-700">
+            I agree to be contacted by call, text, or email about T-Mobile Fiber options
+            for this address. Message/data rates may apply. Reply STOP to opt out.
           </span>
         </label>
         {errors.consent && <FieldError>{errors.consent}</FieldError>}
 
-        <p className="text-center text-xs text-muted-foreground pt-1">
-          No payment is collected on this page.
-        </p>
+        <p className="text-center text-xs text-gray-400 pt-1">No payment is collected on this page.</p>
 
         {error && (
-          <div className="rounded-lg bg-destructive/10 text-destructive text-sm p-3">
+          <div className="rounded-lg bg-red-50 text-red-600 text-sm p-3 border border-red-200">
             {error}
           </div>
         )}
@@ -1053,7 +1001,7 @@ function StepInstall({
 
       <NavRow
         onBack={onBack}
-        onNext={handle}
+        onNext={() => { if (validate()) onSubmit(); }}
         nextLabel={submitting ? "Submitting…" : "Submit Install Request"}
         nextDisabled={submitting}
       />
@@ -1066,27 +1014,20 @@ function StepInstall({
 function Success() {
   return (
     <main className="flex-1 max-w-xl mx-auto w-full px-5 py-10">
-      <div className="rounded-3xl bg-card border p-8 text-center shadow-sm">
-        <div className="mx-auto h-16 w-16 rounded-full bg-success/15 grid place-items-center">
-          <CheckIcon className="h-8 w-8 text-success" />
+      <div className="rounded-3xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+        <div className="mx-auto h-16 w-16 rounded-full bg-magenta grid place-items-center">
+          <CheckIcon className="h-8 w-8 text-white" />
         </div>
-        <h2 className="mt-5 text-2xl font-extrabold tracking-tight">
-          Request received
-        </h2>
-        <p className="mt-3 text-[15px] text-foreground/80 leading-relaxed">
-          Your request has been received. A representative will review your
-          information and follow up to confirm available install options.
+        <h2 className="mt-5 text-2xl font-extrabold tracking-tight text-black">Request received!</h2>
+        <p className="mt-3 text-[15px] text-gray-600 leading-relaxed">
+          {"A representative will review your information and follow up to confirm available install options."}
         </p>
-        <div className="mt-6 rounded-xl bg-secondary p-4 text-sm">
+        <div className="mt-6 rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-600">
           <span className="font-semibold">Prefer texting?</span> Text{" "}
           <span className="font-bold text-magenta">FIBER</span> to{" "}
-          <a
-            href="sms:8886438620?&body=FIBER"
-            className="font-bold text-magenta underline"
-          >
+          <a href="sms:8886438620?&body=FIBER" className="font-bold text-magenta underline">
             888-643-8620
-          </a>
-          .
+          </a>.
         </div>
       </div>
     </main>
@@ -1095,27 +1036,17 @@ function Success() {
 
 // ---------------- Reusable bits ----------------
 
-function Label({
-  children,
-  optional,
-}: {
-  children: React.ReactNode;
-  optional?: boolean;
-}) {
+function Label({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
-    <label className="block text-sm font-semibold mb-1.5">
+    <label className="block text-sm font-semibold mb-1.5 text-black">
       {children}
-      {optional && (
-        <span className="text-muted-foreground font-normal ml-1">(optional)</span>
-      )}
+      {optional && <span className="text-gray-400 font-normal ml-1">(optional)</span>}
     </label>
   );
 }
 
 function FieldError({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mt-1.5 text-xs font-medium text-destructive">{children}</p>
-  );
+  return <p className="mt-1.5 text-xs font-medium text-red-500">{children}</p>;
 }
 
 function Field({
@@ -1155,8 +1086,8 @@ function Field({
 }
 
 function inputCls(hasError: boolean) {
-  return `w-full rounded-xl border-2 bg-card px-4 py-3.5 text-base outline-none transition focus:border-magenta ${
-    hasError ? "border-destructive" : "border-border"
+  return `w-full rounded-xl border-2 bg-white px-4 py-3.5 text-base outline-none transition focus:border-magenta text-black ${
+    hasError ? "border-red-400" : "border-gray-200"
   }`;
 }
 
@@ -1174,11 +1105,11 @@ function NavRow({
   return (
     <>
       {/* Sticky mobile bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-background/95 backdrop-blur p-3 sm:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur p-3 sm:hidden">
         <div className="max-w-xl mx-auto flex gap-2">
           <button
             onClick={onBack}
-            className="px-4 py-3.5 rounded-xl border-2 border-border font-semibold text-sm"
+            className="px-4 py-3.5 rounded-xl border-2 border-gray-200 font-semibold text-sm text-black"
           >
             Back
           </button>
@@ -1195,7 +1126,7 @@ function NavRow({
       <div className="hidden sm:flex gap-3 mt-8">
         <button
           onClick={onBack}
-          className="px-5 py-3 rounded-xl border-2 border-border font-semibold"
+          className="px-5 py-3 rounded-xl border-2 border-gray-200 font-semibold text-black"
         >
           Back
         </button>
@@ -1211,18 +1142,12 @@ function NavRow({
   );
 }
 
-function StickyCta({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function StickyCta({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-background/95 backdrop-blur p-3">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur p-3">
       <button
         onClick={onClick}
-        className="w-full max-w-xl mx-auto block bg-magenta text-white font-bold rounded-xl py-4 shadow-md"
+        className="w-full max-w-xl mx-auto block bg-magenta text-white font-bold rounded-full py-4 shadow-md"
       >
         {children}
       </button>
@@ -1232,15 +1157,7 @@ function StickyCta({
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -1256,7 +1173,6 @@ function formatPhone(v: string) {
 }
 
 function formatESTTimestamp(d: Date) {
-  // MM/DD/YYYY HH:MM AM/PM in America/New_York
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     month: "2-digit",
