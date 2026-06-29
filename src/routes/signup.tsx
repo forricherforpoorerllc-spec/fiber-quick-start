@@ -40,13 +40,15 @@ interface Plan {
 
 const PLANS: Plan[] = [
   {
-    id: "fiber-300",
-    name: "Fiber 300",
-    price: "$45",
-    regular: "$55/mo",
-    speed: "306 Mbps ↓ / 305 Mbps ↑",
+    id: "fiber-2gig",
+    name: "Fiber 2 Gig",
+    price: "$70",
+    regular: "$80/mo",
+    speed: "2000 Mbps ↓ / 1000 Mbps ↑",
+    badge: "Best Promo",
+    highlight: true,
     features:
-      "Wi-Fi router, installation, unlimited data, and T-Mobile Tuesdays perks.",
+      "First month free + $100 back. Wi-Fi router, mesh extender as needed, installation, unlimited data, T-Mobile Tuesdays perks.",
   },
   {
     id: "fiber-1gig",
@@ -59,15 +61,13 @@ const PLANS: Plan[] = [
       "First month free. Wi-Fi router, mesh extender as needed, installation, unlimited data, T-Mobile Tuesdays perks.",
   },
   {
-    id: "fiber-2gig",
-    name: "Fiber 2 Gig",
-    price: "$70",
-    regular: "$80/mo",
-    speed: "2000 Mbps ↓ / 1000 Mbps ↑",
-    badge: "Best Promo",
-    highlight: true,
+    id: "fiber-300",
+    name: "Fiber 300",
+    price: "$45",
+    regular: "$55/mo",
+    speed: "306 Mbps ↓ / 305 Mbps ↑",
     features:
-      "First month free + $100 back. Wi-Fi router, mesh extender as needed, installation, unlimited data, T-Mobile Tuesdays perks.",
+      "Wi-Fi router, installation, unlimited data, and T-Mobile Tuesdays perks.",
   },
 ];
 
@@ -367,24 +367,34 @@ function Footer() {
 function Hero({ onStart }: { onStart: () => void }) {
   return (
     <main className="flex-1">
-      <section className="relative bg-magenta text-white overflow-hidden">
+      {/* ── Hero: black + magenta ── */}
+      <section className="relative bg-ink text-white overflow-hidden">
+        {/* Magenta glow orbs */}
         <div
-          className="absolute inset-0 opacity-25 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(circle at 15% 20%, rgba(255,255,255,0.45), transparent 45%), radial-gradient(circle at 85% 80%, rgba(0,0,0,0.35), transparent 50%), radial-gradient(circle at 70% 10%, rgba(255,255,255,0.25), transparent 40%)",
+              "radial-gradient(ellipse 70% 60% at 0% 100%, rgba(226,0,116,0.35) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 100% 0%, rgba(226,0,116,0.20) 0%, transparent 55%)",
           }}
         />
-        <div className="relative max-w-6xl mx-auto px-5 lg:px-8 pt-8 lg:pt-20 pb-10 lg:pb-24 grid lg:grid-cols-2 lg:gap-16 items-center">
+        {/* Diagonal magenta accent */}
+        <div
+          className="absolute top-0 right-0 w-1/3 h-full pointer-events-none opacity-10"
+          style={{ background: "linear-gradient(135deg, transparent 40%, #E20074 100%)" }}
+        />
+
+        <div className="relative max-w-6xl mx-auto px-5 lg:px-8 pt-10 lg:pt-20 pb-12 lg:pb-24 grid lg:grid-cols-2 lg:gap-16 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
-              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-              AVAILABLE AT YOUR ADDRESS
+            <span className="inline-flex items-center gap-2 bg-magenta/20 border border-magenta/40 rounded-full px-3 py-1 text-xs font-black tracking-widest uppercase text-magenta">
+              <span className="h-2 w-2 rounded-full bg-magenta animate-pulse" />
+              Available at your address
             </span>
-            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight">
-              Great news! T-Mobile Fiber is available at your address.
+            <h1 className="mt-5 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight">
+              Great news!{" "}
+              <span className="text-magenta">T-Mobile Fiber</span>{" "}
+              is available at your address.
             </h1>
-            <p className="mt-3 lg:mt-5 text-base sm:text-lg lg:text-xl text-white/90 max-w-lg">
+            <p className="mt-4 lg:mt-6 text-base sm:text-lg lg:text-xl text-white/70 max-w-lg leading-relaxed">
               Choose your plan and request an install time. Takes about 2 minutes.
             </p>
 
@@ -395,24 +405,23 @@ function Hero({ onStart }: { onStart: () => void }) {
                 "Free professional installation",
                 "No payment collected today",
               ].map((t) => (
-                <li
-                  key={t}
-                  className="flex items-start gap-3 text-[15px] lg:text-base font-medium"
-                >
-                  <CheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
+                <li key={t} className="flex items-start gap-3 text-[15px] lg:text-base font-medium text-white/90">
+                  <span className="h-5 w-5 shrink-0 mt-0.5 rounded-full bg-magenta/20 border border-magenta flex items-center justify-center">
+                    <CheckIcon className="h-3 w-3 text-magenta" />
+                  </span>
                   <span>{t}</span>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-7 lg:mt-10 flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="mt-8 lg:mt-12 flex flex-col sm:flex-row gap-3 sm:items-center">
               <button
                 onClick={onStart}
-                className="w-full sm:w-auto bg-white text-magenta font-bold text-base lg:text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-0.5 active:scale-[0.99] transition"
+                className="w-full sm:w-auto bg-magenta text-white font-black text-base lg:text-lg px-10 py-4 rounded-xl shadow-[0_0_32px_rgba(226,0,116,0.55)] hover:shadow-[0_0_48px_rgba(226,0,116,0.75)] hover:-translate-y-0.5 active:scale-[0.99] transition-all"
               >
                 Start Request →
               </button>
-              <p className="text-xs lg:text-sm text-white/80 text-center sm:text-left">
+              <p className="text-xs lg:text-sm text-white/50 text-center sm:text-left">
                 Takes about 2 minutes
                 <br className="hidden sm:block" />
                 <span className="sm:hidden"> · </span>No payment today
@@ -422,33 +431,33 @@ function Hero({ onStart }: { onStart: () => void }) {
 
           {/* Desktop preview card */}
           <div className="hidden lg:block relative">
-            <div className="absolute -inset-6 bg-white/10 rounded-[2rem] blur-2xl" />
-            <div className="relative rounded-3xl bg-white text-ink shadow-2xl p-7 rotate-1 hover:rotate-0 transition-transform">
+            <div
+              className="absolute -inset-8 rounded-[3rem] blur-3xl opacity-40"
+              style={{ background: "radial-gradient(ellipse at center, #E20074 0%, transparent 70%)" }}
+            />
+            <div className="relative rounded-3xl bg-white/[0.05] border border-white/10 backdrop-blur-sm text-white shadow-2xl p-7 rotate-1 hover:rotate-0 transition-transform">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-magenta">
-                  Most Popular
+                <span className="text-[10px] font-black uppercase tracking-widest text-magenta bg-magenta/15 border border-magenta/30 px-2.5 py-0.5 rounded-full">
+                  Best Promo
                 </span>
-                <span className="text-xs font-semibold text-muted-foreground">
-                  AutoPay
-                </span>
+                <span className="text-xs font-semibold text-white/40">AutoPay</span>
               </div>
-              <div className="mt-2 text-2xl font-black">Fiber 1 Gig</div>
-              <div className="text-sm text-muted-foreground">
-                1000 Mbps ↓ / 1000 Mbps ↑
-              </div>
+              <div className="mt-3 text-2xl font-black">Fiber 2 Gig</div>
+              <div className="text-sm text-white/50">2000 Mbps ↓ / 1000 Mbps ↑</div>
               <div className="mt-5 flex items-baseline gap-2">
-                <span className="text-5xl font-black tracking-tight">$60</span>
-                <span className="text-base font-semibold text-muted-foreground">
-                  /mo
+                <span className="text-5xl font-black tracking-tight text-white">$70</span>
+                <span className="text-base font-semibold text-white/50">/mo</span>
+                <span className="text-sm text-white/30 line-through ml-1">$80</span>
+              </div>
+              <div className="mt-2 flex gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                  <CheckIcon className="h-2.5 w-2.5" /> First month free
                 </span>
-                <span className="text-sm text-muted-foreground line-through ml-1">
-                  $70
+                <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                  <CheckIcon className="h-2.5 w-2.5" /> $100 back
                 </span>
               </div>
-              <div className="mt-1 text-xs font-bold text-magenta">
-                First month free
-              </div>
-              <div className="mt-5 h-px bg-border" />
+              <div className="mt-4 h-px bg-white/10" />
               <ul className="mt-4 space-y-2 text-sm">
                 {[
                   "Wi-Fi router included",
@@ -456,24 +465,27 @@ function Hero({ onStart }: { onStart: () => void }) {
                   "Unlimited data, no caps",
                   "T-Mobile Tuesdays perks",
                 ].map((t) => (
-                  <li key={t} className="flex items-start gap-2">
+                  <li key={t} className="flex items-start gap-2 text-white/80">
                     <CheckIcon className="h-4 w-4 text-magenta mt-0.5 shrink-0" />
                     <span>{t}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="absolute -bottom-4 -left-4 rounded-2xl bg-ink text-white px-4 py-3 shadow-xl text-sm font-semibold">
-              <span className="text-magenta">●</span> 2 Gig: $100 back
+            <div className="absolute -bottom-4 -right-4 rounded-2xl bg-magenta text-white px-4 py-3 shadow-[0_0_24px_rgba(226,0,116,0.6)] text-sm font-black">
+              2 Gig: $100 back
             </div>
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-5 lg:px-8 py-8 lg:py-14 grid grid-cols-3 gap-3 lg:gap-6 text-center">
-        <Stat label="Fiber speeds" value="Up to 2 Gig" />
-        <Stat label="Pro install" value="Free" />
-        <Stat label="Data caps" value="None" />
+      {/* Stats bar */}
+      <section className="bg-ink border-t border-white/10">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 py-6 lg:py-10 grid grid-cols-3 gap-3 lg:gap-6 text-center">
+          <Stat label="Fiber speeds" value="Up to 2 Gig" />
+          <Stat label="Pro install" value="Free" />
+          <Stat label="Data caps" value="None" />
+        </div>
       </section>
     </main>
   );
@@ -481,11 +493,11 @@ function Hero({ onStart }: { onStart: () => void }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl lg:rounded-2xl border bg-card p-3 lg:p-6">
-      <div className="text-sm lg:text-2xl font-bold lg:font-black text-foreground">
+    <div className="rounded-xl lg:rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-6">
+      <div className="text-sm lg:text-2xl font-bold lg:font-black text-white">
         {value}
       </div>
-      <div className="text-[11px] lg:text-sm text-muted-foreground mt-0.5 lg:mt-1">
+      <div className="text-[11px] lg:text-sm text-white/50 mt-0.5 lg:mt-1">
         {label}
       </div>
     </div>
@@ -564,59 +576,87 @@ function StepPlan({
               key={plan.id}
               onClick={() => {
                 onChange(plan.id);
-                // Auto-advance shortly so the user sees the selection
                 setTimeout(onNext, 350);
               }}
-              className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+              className={`w-full text-left rounded-2xl border-2 p-5 transition-all relative overflow-hidden ${
                 selected
-                  ? "border-magenta bg-accent shadow-lg scale-[1.01]"
+                  ? plan.highlight
+                    ? "border-magenta bg-ink shadow-[0_0_28px_rgba(226,0,116,0.35)] scale-[1.01]"
+                    : "border-magenta bg-accent shadow-lg scale-[1.01]"
                   : plan.highlight
-                    ? "border-magenta/40 bg-card hover:border-magenta"
+                    ? "border-magenta bg-ink hover:shadow-[0_0_20px_rgba(226,0,116,0.2)]"
                     : "border-border bg-card hover:border-foreground/30"
               }`}
             >
+              {/* Background glow for highlight plan */}
+              {plan.highlight && (
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-20"
+                  style={{ background: "radial-gradient(ellipse 80% 80% at 0% 100%, #E20074, transparent)" }}
+                />
+              )}
+
               {plan.badge && (
                 <span
-                  className={`absolute -top-2.5 left-4 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                    plan.highlight
-                      ? "bg-ink text-white"
-                      : "bg-magenta text-white"
-                  }`}
+                  className="absolute -top-px -right-px text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-bl-xl rounded-tr-xl bg-magenta text-white"
                 >
                   {plan.badge}
                 </span>
               )}
-              <div className="flex items-start justify-between gap-3">
+
+              <div className="flex items-start justify-between gap-3 relative">
                 <div className="min-w-0">
-                  <div className="font-extrabold text-lg leading-tight">
+                  <div className={`font-extrabold text-xl leading-tight ${plan.highlight ? "text-white" : "text-foreground"}`}>
                     {plan.name}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className={`text-xs mt-0.5 ${plan.highlight ? "text-white/60" : "text-muted-foreground"}`}>
                     {plan.speed}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-2xl font-black leading-none">
+                  <div className={`text-3xl font-black leading-none ${plan.highlight ? "text-white" : "text-foreground"}`}>
                     {plan.price}
                     <span className="text-sm font-semibold">/mo</span>
                   </div>
-                  <div className="text-[11px] text-muted-foreground line-through mt-0.5">
+                  <div className={`text-[11px] line-through mt-0.5 ${plan.highlight ? "text-white/40" : "text-muted-foreground"}`}>
                     {plan.regular}
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-[13px] text-foreground/80 leading-relaxed">
+
+              {/* Promo pills */}
+              {plan.id === "fiber-2gig" && (
+                <div className="relative mt-3 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    <CheckIcon className="h-3 w-3" /> First month free
+                  </span>
+                  <span className="inline-flex items-center gap-1 bg-magenta/25 border border-magenta/50 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    <CheckIcon className="h-3 w-3" /> $100 back
+                  </span>
+                </div>
+              )}
+              {plan.id === "fiber-1gig" && (
+                <div className="relative mt-3 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 bg-magenta/10 border border-magenta/30 text-magenta text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    <CheckIcon className="h-3 w-3" /> First month free
+                  </span>
+                </div>
+              )}
+
+              <p className={`mt-3 text-[13px] leading-relaxed relative ${plan.highlight ? "text-white/70" : "text-foreground/80"}`}>
                 {plan.features}
               </p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">
+              <div className="mt-3 flex items-center justify-between relative">
+                <span className={`text-[11px] ${plan.highlight ? "text-white/40" : "text-muted-foreground"}`}>
                   With AutoPay
                 </span>
                 <span
                   className={`h-6 w-6 rounded-full grid place-items-center border-2 ${
                     selected
                       ? "border-magenta bg-magenta text-white"
-                      : "border-border"
+                      : plan.highlight
+                        ? "border-white/30"
+                        : "border-border"
                   }`}
                 >
                   {selected && <CheckIcon className="h-3.5 w-3.5" />}
