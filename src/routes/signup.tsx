@@ -325,11 +325,8 @@ function Hero({ onStart }: { onStart: () => void }) {
 
         <div className="relative w-full max-w-6xl mx-auto px-5 lg:px-8 py-10 lg:py-12">
           <div className="max-w-[520px]">
-            <p className="text-sm font-black uppercase tracking-widest text-magenta mb-3">
-              T-Mobile Fiber is available in your area.
-            </p>
             <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-black leading-[1.04] tracking-tight text-white text-balance">
-              Get ultra-fast<br className="hidden sm:block" /> fiber internet.
+              <span className="text-magenta">T-Mobile Fiber</span> is available in your area.
             </h1>
             <ul className="mt-5 space-y-2">
               {[
